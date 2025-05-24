@@ -34,3 +34,37 @@ def run_query(request):
                 return JsonResponse({'error': 'Unsupported query type'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+
+
+def get_table_names(request):
+    try:
+        with connection.cursor() as cursor:
+            table_names = connection.introspection.table_names(cursor)
+            return JsonResponse({'tables': table_names}, status=200)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_table_schema(request):
+    schema = {}
+    try:
+        with connection.cursor() as cursor:
+            table_names = connection.introspection.table_names(cursor)
+            for table in table_names:
+                cursor.execute(f"SELECT * FROM {table}  LIMIT 1")
+                sample_data = cursor.fetchall()
+                schema[table] = []
+                details =  connection.introspection.get_table_description(cursor, table)
+                for detail in details:
+                    try:
+                        django_types = connection.introspection.get_field_type(detail.type_code, detail)
+                    except Exception as e:
+                        django_types = str(detail.type_code)
+                    schema[table].append({
+                        'name': detail.name,
+                        'type': django_types[:-5],
+                        'sample' : sample_data
+                    })
+        return JsonResponse({'schema': schema}, status=200)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

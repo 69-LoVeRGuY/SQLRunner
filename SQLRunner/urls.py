@@ -21,5 +21,7 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.home, name='home'),
-    path('run_query/', views.run_query, name='run_query'),
+    path('execute/', views.run_query, name='run_query'),
+    path('tables/', views.get_table_names, name='get_table_names'),
+    path('schema/', views.get_table_schema, name='get_table_schema'),
 ]

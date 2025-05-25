@@ -38,10 +38,16 @@ def run_query(request):
 
 
 def get_table_names(request):
+    tables = []
     try:
         with connection.cursor() as cursor:
             table_names = connection.introspection.table_names(cursor)
-            return JsonResponse({'tables': table_names}, status=200)
+            for tableName in table_names:
+                if '_' in tableName:
+                    continue
+                else:
+                    tables.append(tableName)
+            return JsonResponse({'tables': tables}, status=200)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -51,6 +57,8 @@ def get_table_schema(request):
         with connection.cursor() as cursor:
             table_names = connection.introspection.table_names(cursor)
             for table in table_names:
+                if '_' in table:
+                    continue
                 cursor.execute(f"SELECT * FROM {table}  LIMIT 1")
                 sample_data = cursor.fetchall()
                 schema[table] = []
@@ -63,8 +71,10 @@ def get_table_schema(request):
                     schema[table].append({
                         'name': detail.name,
                         'type': django_types[:-5],
-                        'sample' : sample_data
                     })
+                schema[table].append({
+                    'sample': sample_data
+                })
         return JsonResponse({'schema': schema}, status=200)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
